@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="jp">
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Stock Data Supplier</title>
+  <meta property="og:title" content="Stock Data Search">
+  <meta property="og:description" content="株探から銘柄情報を取得し，株の売買に必要な情報を簡潔に表示します．">
+  <?!= HtmlService.createHtmlOutputFromFile('css').getContent(); ?>
+  <style id="after-style"></style>
+  <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.4/css/all.css" integrity="sha384-DyZ88mC6Up2uqS4h/KRgHuoeGwBcD4Ng9SiP4dIRy0EXTlnuz47vAwmeGwVChigm" crossorigin="anonymous">
+  <link rel="preload" as="image" href="https://drive.google.com/uc?id=1PiLiY0C_iHik6L4lC4JQ6kyScrtNr-Cu">
+</head>
+<body>
+  <div id="top-search-box">
+    <form class="search-form">
+      <input type="text" id="top-search-code" placeholder="銘柄コードまたは銘柄名">
+      <input type="text" name="dummy" style="display:none;">
+      <button id="top-search-button" type="button">検索</button>
+    </form>
+    <div id="top-search-announce">必ずプルダウンから選択してください．</div>
+  </div>
+  <div id="main-boxes">
+    <div id="main-search-box">
+      <form class="search-form">
+        <input type="text" id="main-search-code" placeholder="銘柄コードまたは銘柄名">
+        <input type="text" name="dummy" style="display:none;">
+        <button id="main-search-button" type="button">検索</button>
+      </form>
+    </div>
+    <div id="search-announce">必ずプルダウンから選択してください．</div>
+    <div id="main-nikkei">
+      <div class="nikkei-title">
+        NIKKEI
+        <a href="https://s.kabutan.jp/stock/chart?code=0000" class="chart-icon" target="_blank">
+          <img src="https://drive.google.com/uc?id=1PiLiY0C_iHik6L4lC4JQ6kyScrtNr-Cu" alt="image of chart icon">
+        </a>
+      </div>
+      <div class="nikkei-price"><span><?!= getPrice("nikkei"); ?></span></div>
+    </div>
+    <div id="main-topix">
+      <div class="topix-title">
+        TOPIX
+        <a href="https://s.kabutan.jp/stock/chart?code=0010" class="chart-icon" target="_blank">
+          <img src="https://drive.google.com/uc?id=1PiLiY0C_iHik6L4lC4JQ6kyScrtNr-Cu" alt="image of chart icon">
+        </a>
+      </div>
+      <div class="topix-price"><span><?!= getPrice("0010"); ?></span></div>
+    </div>
+    <div id="main-nydow">
+      <div class="nydow-title">
+        NYDOW
+        <a href="https://us.kabutan.jp/indexes/%5EDJI/chart" class="chart-icon" target="_blank">
+          <img src="https://drive.google.com/uc?id=1PiLiY0C_iHik6L4lC4JQ6kyScrtNr-Cu" alt="image of chart icon">
+        </a>
+      </div>
+      <div class="nydow-price"><span><?!= getPrice("nydow"); ?></span></div>
+    </div>
+    <div id="main-usdyen">
+      <div class="usdyen-title">
+        USDYEN
+        <a href="https://s.kabutan.jp/stock/chart?code=0950" class="chart-icon" target="_blank">
+          <img src="https://drive.google.com/uc?id=1PiLiY0C_iHik6L4lC4JQ6kyScrtNr-Cu" alt="image of chart icon">
+        </a>
+      </div>
+      <div class="usdyen-price"><span><?!= getPrice("usdyen"); ?></span></div>
+    </div>
+  </div>
+  <div id="loading-screen">
+    <div id="search-loader">
+      <div class="cube1"></div>
+      <div class="cube2"></div>
+    </div>
+    <div class="progress">
+      <div class="progress-bar progress-bar-danger progress-bar-striped active">
+        <div class="progress-value">0%</div>
+      </div>
+    </div>
+  </div>
+  <div id="code-boxes">
+    <!-- header -->
+    <div id="code-header">summary</div>
+    <div id="code-num"><div>error</div></div>
+    <div id="code-title"><div>error</div></div>
+    <div id="code-price"><div class="price">error</div><div class="unit">円</div></div>
+    <div id="code-buy-rank" class="tip">
+      <div class="upper icon">買い時<i class="fas fa-info-circle"></i></div><div class="lower">error</div>
+      <div class="tip-text down" style="display: none">取得したデータをもとに買い時をS, A, B, C, D, Eの6段階で評価する．</div>
+    </div>
+    <div id="code-sell-rank" class="tip">
+      <div class="upper icon">売り時<i class="fas fa-info-circle"></i></div><div class="lower">error</div>
+      <div class="tip-text down" style="display: none">取得したデータをもとに売り時をS, A, B, C, D, Eの6段階で評価する．</div>
+    </div>
+    <div id="code-career"><div class="upper">職種</div><div class="lower">error</div></div>
+    <div id="code-settlement"><div class="upper">決算発表日</div><div class="lower">error</div></div>
+    <!-- chart -->
+    <div id="code-chart">chart</div>
+    <div id="code-moving" class="tip">
+      <div class="upper icon">25日，200日移動平均線<i class="fas fa-info-circle"></i></div><div class="lower">error</div>
+      <div class="tip-text down" style="display: none">移動平均線が各期間で何%上昇・下降したかを表す．</div>
+    </div>
+    <div id="code-market-capital" class="tip">
+      <div class="upper icon">時価総額<i class="fas fa-info-circle"></i></div><div class="lower">error</div>
+      <div class="tip-text down" style="display: none">時価総額は「株価」×「発行済み株式数」で計算される．</div>
+    </div>
+    <div id="code-volume" class="tip">
+      <div class="upper icon">出来高<i class="fas fa-info-circle"></i></div><div class="lower">error</div>
+      <div class="tip-text down" style="display: none">当日の株売買数を表す．</div>
+    </div>
+    <div id="code-bollinger" class="tip">
+      <div class="upper icon">ボリンジャーバンド(2σ,3σ,4σ)<i class="fas fa-info-circle"></i></div><div class="lower">error</div>
+      <div class="tip-text down" style="display: none">直近20日間の終値から求めた標準偏差σを表す．2σは95.4%，3σは99.7%，4σは99.99%の確率で現在株価からそれぞれの幅に含まれる．</div>
+    </div>
+    <div id="code-cup"><div class="upper icon">カップウィズハンドル</div><div class="lower">Comming Soon!</div></div>
+    <!-- finance -->
+    <div id="code-finance">finance</div>
+    <div id="code-eps" class="tip">
+      <div class="upper icon">EPS(前年同期比)<i class="fas fa-info-circle"></i></div><div class="lower">error</div>
+      <div class="tip-text down" style="display: none">1株当たりの利益を表す．「当期純利益」÷「発行済み株式数」で計算される．当期純利益が赤字の場合EPSは0となる．</div>
+    </div>
+    <div id="code-sales" class="tip">
+      <div class="upper icon">売上高(前年同期比)<i class="fas fa-info-circle"></i></div><div class="lower">error</div>
+      <div class="tip-text down" style="display: none">四半期の売上高を表す．</div>
+    </div>
+    <div id="code-roe" class="tip">
+      <div class="upper icon">ROE(前年比)<i class="fas fa-info-circle"></i></div><div class="lower">error</div>
+      <div class="tip-text down" style="display: none">自己資本利益率を表す．「当期純利益」÷「自己資本」で計算され，この値が大きいほど(10%以上)効率的な運営を行っている．</div>
+    </div>
+    <div id="code-roa" class="tip">
+      <div class="upper icon">ROA(前年比)<i class="fas fa-info-circle"></i></div><div class="lower">error</div>
+      <div class="tip-text down" style="display: none">総資産利益率を表す．「当期純利益」÷「総資産」で計算され，借入金などを含めたすべての資産を用いてどれほど効率的な経営を行っているかを示す．この値が大きいほど(5%以上)効率的な運営を行っている．</div>
+    </div>
+    <div id="code-income-rate" class="tip">
+      <div class="upper icon">営業利益率(前年比)<i class="fas fa-info-circle"></i></div><div class="lower">error</div>
+      <div class="tip-text down" style="display: none">売上高に対する営業利益の割合を表す．自社製品に多くの付加価値をつけられる企業ほどこの割合は高い．</div>
+    </div>
+    <div id="code-per" class="tip">
+      <div class="upper icon">PER<i class="fas fa-info-circle"></i></div><div class="lower">error</div>
+      <div class="tip-text down" style="display: none">株価収益率を表す．「株価」÷「EPS」で計算され，割高・割安性を示す．EPSが0のときPERは計算されない．</div>
+    </div>
+    <div id="code-pbr" class="tip">
+      <div class="upper icon">PBR<i class="fas fa-info-circle"></i></div><div class="lower">error</div>
+      <div class="tip-text down" style="display: none">株価純資産倍率を表す．「株価」÷「1株当たり純資産」で計算され，割高・割安性を示す．</div>
+    </div>
+    <div id="code-psr" class="tip">
+      <div class="upper icon">PSR<i class="fas fa-info-circle"></i></div><div class="lower">error</div>
+      <div class="tip-text down" style="display: none">株価売上高倍率を表す．「時価総額」÷「売上高」で計算され，割高・割安性を示す．一般的に20倍を超えると割高である．</div>
+    </div>
+    <div id="code-de-rate" class="tip">
+      <div class="upper icon">有利子負債倍率<i class="fas fa-info-circle"></i></div><div class="lower">error</div>
+      <div class="tip-text down" style="display: none">利息を付けて返さなければいけない負債と自己資本の比率を表す．</div>
+    </div>
+    <div id="code-max"><div class="upper">通期過去最高売上高(決算期)</div><div class="lower">error</div></div>
+    <div id="code-capital-rate" class="tip">
+      <div class="upper icon">自己資本比率<i class="fas fa-info-circle"></i></div><div class="lower">error</div>
+      <div class="tip-text down" style="display: none">総資産のうち企業が自由に使えるお金の割合を表す．40％以上あれば債務超過には陥らないとされる．</div>
+    </div>
+    <div id="code-others"><div class="upper">他銘柄暴落率</div><div class="lower">Comming Soon!</div></div>
+  </div>
+  <div id="error-log-box"></div>
+  <?!= HtmlService.createHtmlOutputFromFile('data').getContent(); ?>
+  <?!= HtmlService.createHtmlOutputFromFile('js').getContent(); ?>
+</body>
+</html>
