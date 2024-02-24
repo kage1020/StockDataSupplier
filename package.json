@@ -1,0 +1,15 @@
+{
+  "name": "stock-data-supplier",
+  "version": "0.0.0",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@line/liff": "2.23.2"
+  },
+  "devDependencies": {
+    "vite": "5.1.4"
+  }
+}
